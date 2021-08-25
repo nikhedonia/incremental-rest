@@ -5,16 +5,19 @@ import update from 'lodash.update';
 const incrementalJson = async function* (response) {
   const reader = response.body.getReader();
   let result = {}
-  while(1) {
+  //TODO: we should only execute this code if we have transfer-encoding = chunked && content-type = multipart 
+  while (1) {
+    // read one chunk
     let data = await reader.read();
     try {
+      
       const chunks = new TextDecoder()
         .decode(data.value)
         .split(":>")
         .map(x=>x.trim())
         .filter(x=>x!="");
+
       for (const str of chunks) {
-        console.log({str})
         const json = JSON.parse(str);
         const path = (json?.path || "");
 
@@ -27,7 +30,6 @@ const incrementalJson = async function* (response) {
       }
     } catch (e) {
       console.log(e);
-
       return;
     }
     if (data.done) break;
@@ -39,8 +41,11 @@ function useIncrementalJson(url, deps) {
 
   useEffect(() => {
     (async () => {
-      const parts = await fetch(url).then(incrementalJson);
+      const parts = await fetch(url)
+        .then(incrementalJson);
       let lastPart = null;
+
+      //TODO: debounce for better performance
       for await (const part of parts) {
         setState({data: part, done: false});
         lastPart = part;
