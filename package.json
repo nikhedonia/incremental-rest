@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "lodash.update": "^4.10.2",
+    "meros": "^1.1.4",
     "next": "11.1.0",
     "react": "17.0.2",
     "react-dom": "17.0.2"
