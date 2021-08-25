@@ -1,8 +1,8 @@
 # Incremental JSON
 
-_Idea_: Leverage http/1.1 chunked responses to send partial json and re-assemble result clientside.
+**Idea**: Leverage http/1.1 chunked responses to send partial json and re-assemble result clientside.
 
-Outcome_: partial results can be rendered clientside
+**Outcome**: partial results can be rendered clientside
 
 ## Approach:
 
