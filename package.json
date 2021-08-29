@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/lodash.update": "^4.10.6",
     "lodash.update": "^4.10.2",
     "meros": "^1.1.4",
     "next": "11.1.0",
