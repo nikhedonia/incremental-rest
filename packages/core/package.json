@@ -1,5 +1,5 @@
 {
-  "name": "core",
+  "name": "@incremental/core",
   "version": "1.0.0",
   "description": "Incremental Core",
   "main": "index.js",
