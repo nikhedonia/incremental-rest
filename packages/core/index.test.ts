@@ -1,6 +1,6 @@
 import { incremental, digest, consume } from ".";
 
-const stream = incremental({
+const stream1 = incremental({
   foo: 1,
   bar: () => 2,
   gen: function*() {
@@ -23,11 +23,20 @@ const stream = incremental({
        blub: Promise.resolve(3)
      })
   }
-}, () => true, [])
+})
+
+const stream2 = incremental({
+  a: 1,
+  b: () => ({
+    c: 2,
+    d: () => Promise.resolve(3),
+    e: () => Promise.resolve(4) 
+  }),
+});
 
 describe("incremental", () => {
   it("should process all entries", async () => {
-    const result = await consume(digest(stream));
+    const result = await consume(digest(stream1));
     expect(result).toEqual({
       foo: 1,
       bar: 2,
@@ -44,5 +53,29 @@ describe("incremental", () => {
         }
       }
     });
+  });
+
+
+  it("should emit patches", async () => {
+    const patches = [];
+    for await (const patch of digest(stream2)) {
+      patches.push(patch);
+    }
+
+    expect(patches).toMatchObject([{
+      data: {
+        a: 1,
+        b: {
+          c: 2
+        }
+      }
+    }, {
+      data: 3,
+      path: ["b", "d"]
+    }, {
+      data: 4,
+      path: ["b", "e"]
+    }])
   })
+
 })
