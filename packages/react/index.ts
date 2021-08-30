@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Patch, patchObject } from "@incremental/core";
 
-export async function* toAsyncSeq<T> (response: Response): AsyncGenerator<T> {
+export async function* responseToIncremental<T> (response: Response): AsyncGenerator<T> {
   if (!response?.body?.getReader) {
     return;
   }
@@ -32,17 +32,17 @@ export async function* toAsyncSeq<T> (response: Response): AsyncGenerator<T> {
   }
 }
 
-export function useIncremental <T>(url: string, deps: {}[]) {
+export function useIncrementalFetch <T>(url: string, deps: unknown[]) {
   const [state, setState] = useState<{
-    data: T|null,
+    data: T | null,
     done: boolean
   }>({data: null, done: false});
 
   useEffect(() => {
     (async () => {
       const fetched = fetch(url);
-      const parts = await fetch(url).then(res=>toAsyncSeq<T>(res));
-      let lastPart: T|null = null;
+      const parts = await fetch(url).then(res=>responseToIncremental<T>(res));
+      let lastPart: T | null = null;
 
       //TODO: debounce for better performance
       for await (const part of parts) {
@@ -50,6 +50,30 @@ export function useIncremental <T>(url: string, deps: {}[]) {
         lastPart = part;
       }
       setState({data: lastPart, done: true});
+    })();
+  }, deps)
+
+  return state;
+}
+
+
+export type PatchStreamFactory = () => AsyncGenerator<Patch>
+
+export function useIncrementalStream <T>(psf: PatchStreamFactory, deps: unknown[]) {
+  const [state, setState] = useState<{
+    data: T | null,
+    done: boolean
+  }>({data: null, done: false});
+
+  useEffect(() => {
+    (async () => {
+      let result = {} as unknown as T;
+      //TODO: debounce for better performance
+      for await (const patch of psf()) {
+        result = patchObject(result as {}, patch);
+        setState({data: result, done: false});
+      }
+      setState({data: result, done: true});
     })();
   }, deps)
 
