@@ -1,5 +1,5 @@
 {
-  "name": "incremental-rest",
+  "name": "incremental",
   "version": "1.0.0",
   "description": "incremental json streams",
   "main": "index.js",
