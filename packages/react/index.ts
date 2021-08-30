@@ -1,6 +1,11 @@
-import {useState, useEffect} from "react";
+import { useState, useEffect } from "react";
+import { Patch, patchObject } from "@incremental/core";
 
-export async function* toAsyncSeq(response) {
+export async function* toAsyncSeq<T> (response: Response): AsyncGenerator<T> {
+  if (!response?.body?.getReader) {
+    return;
+  }
+
   const reader = response.body.getReader();
   let result = {}
   //TODO: we should only execute this code if we have transfer-encoding = chunked && content-type = multipart 
@@ -16,31 +21,28 @@ export async function* toAsyncSeq(response) {
         .filter(x=>x!="");
 
       for (const str of chunks) {
-        const json = JSON.parse(str);
-        const path = (json?.path || "");
-
-        if (path != "") {
-          update(result, path, () => json.data);
-        } else { 
-          result = json.data;
-        }
-        yield result;
+        const patch = JSON.parse(str) as Patch;
+        patchObject(result, patch);
+        yield (result as T);
       }
     } catch (e) {
-      console.log(e);
       return;
     }
     if (data.done) break;
   }
 }
 
-export function useIncrementalJson(url, deps) {
-  const [state, setState] = useState({data: undefined, done: false});
+export function useIncremental <T>(url: string, deps: {}[]) {
+  const [state, setState] = useState<{
+    data: T|null,
+    done: boolean
+  }>({data: null, done: false});
 
   useEffect(() => {
     (async () => {
-      const parts = await fetch(url).then(toAsycSeq);
-      let lastPart = null;
+      const fetched = fetch(url);
+      const parts = await fetch(url).then(res=>toAsyncSeq<T>(res));
+      let lastPart: T|null = null;
 
       //TODO: debounce for better performance
       for await (const part of parts) {
